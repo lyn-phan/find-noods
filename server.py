@@ -31,15 +31,11 @@ def geocode_map():
     res = req.json()
     print(res)
     result = res['results'][0]
-    
-    lat_lng = []
+
     lat = result["geometry"]["location"]["lat"]
     lng = result["geometry"]["location"]["lng"]
-    lat_lng.append(lat)
-    lat_lng.append(lng)
-    lat_long = str(lat_lng)
-    
-    return lat_long
+
+    return lat, lng
 
 
 @app.route('/home')
@@ -52,21 +48,21 @@ def homepage_query():
     city = request.form.get('city') #grabbed user input and stored it in 'city' and 'query'
     query = request.form.get('query')
     
-    latlng = geocode_map()
-    foursq_id = module.get_4sq_id('CLIENT_ID')
-    foursq_secret = module.get_4sq_secret('CLIENT_SECRET')
+    latlong = str(geocode_map())
+    ll = latlong.replace('(', '').replace(')', '')
+    # foursq_id = module.get_4sq_id('CLIENT_ID')
+    # foursq_secret = module.get_4sq_secret('CLIENT_SECRET')
 
     url = "https://api.foursquare.com/v2/venues/search"
-    payload = {'near': city, 'll': latlng, 'query': query, 'client_id': foursq_id, 'client_secret': foursq_secret}
-    r = requests.get(url, params=payload)
+    payload = {'near': city, 'll': ll, 'query': query, 'client_id': module.get_4sq_id('CLIENT_ID'), 'client_secret': module.get_4sq_secret('CLIENT_SECRET'),
+    'v': 20190425, 'limit': 10}
+    req = requests.get(url, params=payload)
+    res = req.json()
+    print(res)
+    venues = res['response']['venues']
 
-    print("-------------------------------------------")
-    print("this API call worked")
-
-    result = json.loads(r.request(url, 'GET')[1])
-
-    if result['response']['venues']:
-        restaurant = result['response']['venues'][0]
+    if res['response']['venues']:
+        restaurant = res['response']['venues'][0]
         venue_id = restaurant['id']
         restaurant_name = restaurant['name']
         restaurant_address = restaurant['location']['formattedAddress']
